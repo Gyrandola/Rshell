@@ -1,5 +1,5 @@
 [package]
-name = "RShell"
+name = "rshell"
 version = "0.1.0"
 edition = "2021"
 authors = ["Simone Orlando <simone.orlando2003@gmail.com>"]
