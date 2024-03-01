@@ -19,7 +19,7 @@ fn shell_loop() {
 
 }
 
-
+// implemented by reading every char
 /*fn shell_read_line() -> String{
     let mut line: String = Default::default();
     let mut character: char;
@@ -27,6 +27,8 @@ fn shell_loop() {
     loop {
         // Read a character from input
         unsafe {
+            // getchar() returns a c_int which we cast to a 8-bit integer (1 byte).
+            // We then cast it as an actual character.
             character = char::from(getchar() as u8);
         }
 
@@ -41,6 +43,7 @@ fn shell_loop() {
     }
 }*/
 
+// Implemented by reading the entire line. TODO.
 fn shell_read_line() -> String{
     let mut line: String = Default::default();
 
