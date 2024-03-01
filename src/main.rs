@@ -6,14 +6,14 @@ fn main() -> ExitCode{
     // Config
 
     // Commands
-    shell_loop();
-    shell_read_line(); // DEBUG
+    rshell_loop();
+    rshell_read_line(); // DEBUG
     // Cleanup
 
     ExitCode::SUCCESS
 }
 
-fn shell_loop() {
+fn rshell_loop() {
     let mut line: &str;
     let args: Vec<String> = vec![String::new(); 126];// char **args
     let mut status: i32;
@@ -22,7 +22,7 @@ fn shell_loop() {
 
 // implemented by reading every char
 // not elegant but works.
-fn shell_read_line() -> String{
+fn rshell_read_line() -> String{
     let mut line: String = Default::default();
     let mut character: char;
 
