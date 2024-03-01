@@ -1,28 +1,38 @@
 use std::process::ExitCode;
-use libc::{c_int, EOF, getchar};
 use std::string;
+use std::io;
+use tokenizers::tokenizer::{Result, Tokenizer};
 
 fn main() -> ExitCode{
     // Config
 
+
+    let encoding = tokenizer.encode("Hey there!", false)?;
+    println!("{:?}", encoding.get_tokens());
     // Commands
     rshell_loop();
-    rshell_read_line(); // DEBUG
+            //rshell_read_line(); // DEBUG
     // Cleanup
 
     ExitCode::SUCCESS
 }
 
 fn rshell_loop() {
-    let mut line: &str;
+    let mut line: String;
     let args: Vec<String> = vec![String::new(); 126];// char **args
-    let mut status: i32;
+    let mut status: i32 = -1;
 
+    while (status != -1){
+        line = rshell_read_line();
+        //args = rshell_parse_line(line);
+
+    }
 }
 
 // implemented by reading every char
 // not elegant but works.
-fn rshell_read_line() -> String{
+// uses libc crate. possibly unsafe
+/*fn rshell_read_line() -> String{
     let mut line: String = Default::default();
     let mut character: char;
 
@@ -43,13 +53,22 @@ fn rshell_read_line() -> String{
             line.push(character);
         }
     }
+}*/
+
+// Implemented by reading the entire line.
+
+fn rshell_read_line() -> String{
+    let mut line: String = Default::default();
+    let stdin = io::stdin();
+    
+    // Read line
+    stdin.read_line(&mut line).expect("ERROR: rshell_read_line()");
+
+    print!("\nRead line: {}",line); //DEBUG
+    return line;
 }
 
-/*// Implemented by reading the entire line. TODO.
-fn shell_read_line() -> String{
-    let mut line: String = Default::default();
+// split line and return vector
+fn rshell_parse_lines(line: String) -> Vec<String>{
 
-
-
-    return line;
-}*/
+}
