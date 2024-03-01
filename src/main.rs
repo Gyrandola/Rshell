@@ -7,6 +7,7 @@ fn main() -> ExitCode{
 
     // Commands
     shell_loop();
+    shell_read_line(); // DEBUG
     // Cleanup
 
     ExitCode::SUCCESS
@@ -20,7 +21,8 @@ fn shell_loop() {
 }
 
 // implemented by reading every char
-/*fn shell_read_line() -> String{
+// not elegant but works.
+fn shell_read_line() -> String{
     let mut line: String = Default::default();
     let mut character: char;
 
@@ -35,19 +37,19 @@ fn shell_loop() {
         // Append characters to line
         if(character as i32 == EOF || character == '\n'){
             line.push('\0');
+            print!("\nLine read: {}", line); // DEBUG
             return line;
         }else{
             line.push(character);
         }
-
     }
-}*/
+}
 
-// Implemented by reading the entire line. TODO.
+/*// Implemented by reading the entire line. TODO.
 fn shell_read_line() -> String{
     let mut line: String = Default::default();
 
 
 
     return line;
-}
+}*/
