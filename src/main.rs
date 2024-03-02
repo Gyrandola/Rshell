@@ -7,6 +7,8 @@ const BUILTIN_COMMANDS: &[&str] = &["help","cd", "exit", "mkdir"];
 
 fn main(){
     rshell_loop();
+
+
     exit(0);
 }
 
@@ -51,7 +53,10 @@ fn rshell_tokenize(line: String) -> Vec<String> {
     let tokens: Vec<String> = line
         .split(&[' ', '\t', '\r', '\n', '\x07'])
         .map(ToOwned::to_owned)
+        .filter(|token| !token.is_empty()) // Filter after mapping
         .collect();
+
+    //println!("Debug: Tokenized line: {:?}", tokens); // FOR DEBUGGING
 
     return tokens;
 }
@@ -61,12 +66,19 @@ fn rshell_launch(args : Vec<String>) ->Result<(), std::io::Error>{
     let mut command = Command::new(&args[0]);
     command.args(&args[1..]);
 
+    //println!("Command: {:?}",command); // FOR DEBUGGING
+
     // Execute
     let output = command.output()?;
 
+    // Print output
+    if !output.stdout.is_empty() {
+        print!("{}", String::from_utf8_lossy(&output.stdout)); // Use print! for raw output
+    }
+
     if !output.status.success() {
         let error_message = String::from_utf8_lossy(&output.stderr);
-        println!("Command failed: {}", error_message);
+        println!("{}", error_message);
     }
 
     Ok(())
