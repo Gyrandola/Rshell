@@ -2,7 +2,7 @@ use std::process::{Command, exit};
 use std::{env, fs, io};
 use std::path::Path;
 
-const BUILTIN_COMMANDS: &[&str] = &["cd", "exit", "mkdir"];
+const BUILTIN_COMMANDS: &[&str] = &["help","cd", "exit", "mkdir"];
 
 
 fn main(){
@@ -16,7 +16,7 @@ fn rshell_loop() {
 
     loop{
         // Print current dir every line
-        eprint!("{}> ",env::current_dir().unwrap().display());
+        eprint!("\n{}> ",env::current_dir().unwrap().display());
 
         // Read raw line from input
         line = rshell_read_line();
@@ -38,7 +38,7 @@ fn rshell_read_line() -> String{
     let stdin = io::stdin();
     
     // Read line
-    stdin.read_line(&mut line).expect("ERROR: rshell_read_line()\n");
+    stdin.read_line(&mut line).expect("ERROR: rshell_read_line()");
 
     //print!("Read line: {}",line); //DEBUG
     return line;
@@ -66,7 +66,7 @@ fn rshell_launch(args : Vec<String>) ->Result<(), std::io::Error>{
 
     if !output.status.success() {
         let error_message = String::from_utf8_lossy(&output.stderr);
-        println!("Command failed: {}\n", error_message);
+        println!("Command failed: {}", error_message);
     }
 
     Ok(())
@@ -74,18 +74,51 @@ fn rshell_launch(args : Vec<String>) ->Result<(), std::io::Error>{
 
 //Handle our shell builtins
 fn rshell_builtin(args: &[String]) -> Result<(), std::io::Error> {
+
     match args[0].as_str() {
 
+        "help" =>{
+            match args[1].as_str(){
+                "" => {
+                    println!("EXIT:         exit shell");
+                    println!("CD:           change  or visualize current working directory");
+                    println!("MKDIR:        create new directories");
+                    return Ok(());
+                }
+
+                "help" => {
+                    println!("provides help information for Rshell commands");
+                    println!("help [COMMAND] -> specific command information");
+                    return Ok(());
+                }
+
+                "exit" => {
+                    println!("terminates rshell process with successful exit code");
+                    return Ok(());
+                }
+
+                "cd" => {
+                    println!("allows you to change or visualize the current working directory");
+                    println!("cd [PATH] -> move to specified directory path");
+                    println!("cd .. -> move to parent directory");
+                    return Ok(());
+                }
+                _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "unexpected argument for help")),
+            }?;
+            Ok(())
+        }
+
         "cd" => {
+            // Print current path
             if args[1].is_empty() {
-                eprintln!("Error: expected argument to cd\n")
+                eprint!("{}\n",env::current_dir().unwrap().display());
             }else{
                 let root = Path::new(&args[1]);
 
                 if root.exists(){
-                    env::set_current_dir(Path::new(&args[1])).expect("Failed to change directory\n");
+                    env::set_current_dir(Path::new(&args[1])).expect("Failed to change directory");
                 }else{
-                    eprintln!("Error: cannot find specified path\n");
+                    eprintln!("Error: cannot find specified path");
                 }
             }
             Ok(())
@@ -93,7 +126,7 @@ fn rshell_builtin(args: &[String]) -> Result<(), std::io::Error> {
 
         "mkdir" => {
             if args[1].is_empty() {
-                eprintln!("Error: expected argument to mkdir\n");
+                eprintln!("Error: expected argument to mkdir");
             }else{
                 fs::create_dir_all(&args[1]).expect("Failed to create directories");
             }
@@ -105,10 +138,8 @@ fn rshell_builtin(args: &[String]) -> Result<(), std::io::Error> {
             std::process::exit(0);
         }
 
-
-
         // Ugly
-        _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "builtin not found\n")),
+        _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "command not found")),
     }
 }
 
