@@ -1,8 +1,9 @@
 use std::process::{Command, exit};
 use std::{env, fs, io};
+use std::fs::File;
 use std::path::Path;
 
-const BUILTIN_COMMANDS: &[&str] = &["help","cd", "exit", "mkdir"];
+const BUILTIN_COMMANDS: &[&str] = &["help", "exit", "cd", "mkdir", "deldir", "del", "create"];
 
 
 fn main(){
@@ -28,7 +29,7 @@ fn rshell_loop() {
 
         // Execute it and handle errors
         if let Err(err) = rshell_execute(args) {
-            eprintln!("Error: {}\n", err);
+            eprintln!("Error: {}", err);
         }
 
     }
@@ -85,50 +86,78 @@ fn rshell_launch(args : Vec<String>) ->Result<(), std::io::Error>{
 }
 
 //Handle our shell builtins
-fn rshell_builtin(args: &[String]) -> Result<(), std::io::Error> {
+fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
 
     match args[0].as_str() {
 
         "help" =>{
-            match args[1].as_str(){
-                "" => {
-                    println!("EXIT:         exit shell");
-                    println!("CD:           change  or visualize current working directory");
-                    println!("MKDIR:        create new directories");
-                    return Ok(());
-                }
+            // If argument doesn't exit
+            if !(args.get_mut(1)).is_some() {
+                println!("HELP:         provide more information");
+                println!("EXIT:         exit shell");
+                println!("CD:           change  or visualize current working directory");
+                println!("MKDIR:        create new directories");
+                println!("DELDIR:       delete a directory and all its contents");
+                println!("DEL:          delete a file");
+                println!("CREATE:          create a file");
+                return Ok(());
+            }else{
+                match args[1].as_str(){
 
-                "help" => {
-                    println!("provides help information for Rshell commands");
-                    println!("help [COMMAND] -> specific command information");
-                    return Ok(());
-                }
+                    "help" => {
+                        println!("provides help information for Rshell commands");
+                        println!("help [COMMAND] -> specific command information");
+                        return Ok(());
+                    }
 
-                "exit" => {
-                    println!("terminates rshell process with successful exit code");
-                    return Ok(());
-                }
+                    "exit" => {
+                        println!("terminates rshell process with successful exit code");
+                        return Ok(());
+                    }
 
-                "cd" => {
-                    println!("allows you to change or visualize the current working directory");
-                    println!("cd [PATH] -> move to specified directory path");
-                    println!("cd .. -> move to parent directory");
-                    return Ok(());
-                }
-                _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "unexpected argument for help")),
-            }?;
+                    "cd" => {
+                        println!("allows you to change or visualize the current working directory");
+                        println!("cd [PATH] -> move to specified directory path");
+                        println!("cd .. -> move to parent directory");
+                        return Ok(());
+                    }
+
+                    "mkdir" => {
+                        println!("creates a new directory or a series of directories given a path");
+                        println!("mkdir [PATH]");
+                        return Ok(());
+                    }
+
+                    "del" => {
+                        println!("delete a file given a path");
+                        println!("del [PATH]");
+                        return Ok(());
+                    }
+
+                    "create" => {
+                        println!("create a file given a path");
+                        println!("create [PATH]");
+                        return Ok(());
+                    }
+                    _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "unexpected argument for help")),
+                }?;
+            }
             Ok(())
         }
 
+        "exit" =>{
+            std::process::exit(0);
+        }
+
         "cd" => {
-            // Print current path
-            if args[1].is_empty() {
+            if !(args.get_mut(1)).is_some(){
                 eprint!("{}\n",env::current_dir().unwrap().display());
             }else{
                 let root = Path::new(&args[1]);
 
                 if root.exists(){
-                    env::set_current_dir(Path::new(&args[1])).expect("Failed to change directory");
+                    let path = args[1..].join(" ");
+                    env::set_current_dir(Path::new(&path)).expect("Failed to change directory");
                 }else{
                     eprintln!("Error: cannot find specified path");
                 }
@@ -137,17 +166,48 @@ fn rshell_builtin(args: &[String]) -> Result<(), std::io::Error> {
         }
 
         "mkdir" => {
-            if args[1].is_empty() {
+            if !(args.get_mut(1)).is_some() {
                 eprintln!("Error: expected argument to mkdir");
             }else{
-                fs::create_dir_all(&args[1]).expect("Failed to create directories");
+                let path = args[1..].join(" ");
+                fs::create_dir_all(path).expect("Failed to create directories");
             }
 
             Ok(())
         }
 
-        "exit" =>{
-            std::process::exit(0);
+
+        "deldir" => {
+            if !(args.get_mut(1)).is_some() {
+                eprintln!("Error: expected argument to deldir");
+            }else{
+                let path = args[1..].join(" ");
+                fs::remove_dir_all(path).expect("Failed to delete directory");
+            }
+
+            Ok(())
+        }
+
+        "del" => {
+            if !(args.get_mut(1)).is_some() {
+                eprintln!("Error: expected argument to del");
+            }else{
+                let path = args[1..].join(" ");
+                fs::remove_file(path).expect("Failed to delete file");
+            }
+
+            Ok(())
+        }
+
+        "create" => {
+            if !(args.get_mut(1)).is_some() {
+                eprintln!("Error: expected argument to create");
+            }else{
+                let path = args[1..].join(" ");
+                File::create(path).expect("Failed to create file");
+            }
+
+            Ok(())
         }
 
         // Ugly
@@ -155,7 +215,7 @@ fn rshell_builtin(args: &[String]) -> Result<(), std::io::Error> {
     }
 }
 
-fn rshell_execute(args : Vec<String>) ->Result<(), std::io::Error>{
+fn rshell_execute(mut args : Vec<String>) ->Result<(), std::io::Error>{
 
     // Empty command
     if args[0].is_empty(){
@@ -165,7 +225,7 @@ fn rshell_execute(args : Vec<String>) ->Result<(), std::io::Error>{
     // Look for builtins and execute them
     for command in BUILTIN_COMMANDS.iter(){
         if args[0] == *command{
-            return rshell_builtin(&args[0..]);
+            return rshell_builtin(&mut args[0..]);
         }
     }
 
