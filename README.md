@@ -4,12 +4,14 @@ Basic & lightweight shell written in Rust.
 
 **Current features:**
 
-* Standard built-ins: `exit`, `cd`, `mkdir`, `help`.
+* Standard built-ins:  `help`, `exit`, `cd`, `mkdir`, `deldir`, `del`, `create`.
 
 **TODO:**
 
-* More built-in commands such as `ls`, `cp`, and `mv`.
+* More built-ins.
+* Built in flag support
 * Scripting
+* Autofill
 * Custom GUI
 
 
