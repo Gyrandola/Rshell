@@ -1,9 +1,6 @@
 
 ## Rshell
 Basic & lightweight shell written in Rust.
-
-**Current features:**
-
 * Standard built-ins:  `help`, `exit`, `cd`, `mkdir`, `deldir`, `del`, `create`.
 
 **TODO:**
