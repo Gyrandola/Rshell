@@ -1,34 +1,42 @@
 use fs::read_dir;
 use std::process::{Command, exit};
 use std::{env, fs, io};
-use std::fs::{File};
+use std::fs::File;
 use std::path::{Path, PathBuf};
 
+// This HAS to be updated if you want to add a built-in.
 const BUILTIN_COMMANDS: &[&str] = &["help", "exit", "cd", "mkdir", "deldir", "del", "create", "dir"];
 
 
 fn main(){
     rshell_loop();
-
-
     exit(0);
 }
 
+/// The main loop of Rshell.
+///
+/// This function continuously prompts the user for input, parses commands,
+/// executes them, and handles any errors that occur.
+///
+/// It performs the following steps:
+///
+/// 1. Prints the current working directory to the console.
+/// 2. Reads a line of input from the user.
+/// 3. Tokenizes the input into individual command arguments.
+/// 4. Attempts to execute the command using the `rshell_execute` function.
+/// 5. If the execution fails, prints an error message to the console.
+/// 6. Repeats the loop for the next command.
 fn rshell_loop() {
     let mut line: String;
     let mut args: Vec<String>;
 
     loop{
-        // Print current dir every line
         eprint!("\n{}> ",env::current_dir().unwrap().display());
 
-        // Read raw line from input
         line = rshell_read_line();
 
-        // Tokenize it
         args = rshell_tokenize(line);
 
-        // Execute it and handle errors
         if let Err(err) = rshell_execute(args) {
             eprintln!("Error: {}", err);
         }
@@ -36,63 +44,67 @@ fn rshell_loop() {
     }
 }
 
-// Read the entire line from stdin
+/// Reads a line of input from the user.
+///
+/// This function prompts the user for input using the standard input stream
+/// (`stdin`) and reads the entered line into a `String`. If an error occurs
+/// during the reading process, it panics with an error message.
+///
+/// Returns the read line as a `String`.
 fn rshell_read_line() -> String{
     let mut line: String = Default::default();
     let stdin = io::stdin();
-    
-    // Read line
+
     stdin.read_line(&mut line).expect("ERROR: rshell_read_line()");
 
-    //print!("Read line: {}",line); //DEBUG
     return line;
 }
 
-// Tokenize line according to preset delimiters
-// We don't yet know which token does/mean what
-// Return: tokens vector
+/// Splits a line of input into tokens (words).
+///
+/// This function takes a `String` containing a line of input and splits it into
+/// individual words (tokens) based on whitespace characters, including spaces,
+/// tabs, carriage returns, newlines, and the BEL character (`\x07`).
+///
+/// 1. It splits the input string using the specified delimiters (`split`).
+/// 2. It converts each split slice into an owned `String` (`map(ToOwned::to_owned)`).
+/// 3. It filters out any empty strings (`filter(|token| !token.is_empty())`).
+/// 4. It collects the resulting tokens into a `Vec<String>` (`collect()`).
+///
+/// Returns a vector of tokens, where each token is a `String`.
 fn rshell_tokenize(line: String) -> Vec<String> {
     let tokens: Vec<String> = line
         .split(&[' ', '\t', '\r', '\n', '\x07'])
         .map(ToOwned::to_owned)
-        .filter(|token| !token.is_empty()) // Filter after mapping
+        .filter(|token| !token.is_empty())
         .collect();
-
-    //println!("Debug: Tokenized line: {:?}", tokens); // FOR DEBUGGING
 
     return tokens;
 }
 
-fn rshell_launch(args : Vec<String>) ->Result<(), io::Error>{
-    // Add arguments
-    let mut command = Command::new(&args[0]);
-    command.args(&args[1..]);
-
-    //println!("Command: {:?}",command); // FOR DEBUGGING
-
-    // Execute
-    let output = command.output()?;
-
-    // Print output
-    if !output.stdout.is_empty() {
-        print!("{}", String::from_utf8_lossy(&output.stdout)); // Use print! for raw output
-    }
-
-    if !output.status.success() {
-        let error_message = String::from_utf8_lossy(&output.stderr);
-        println!("{}", error_message);
-    }
-
-    Ok(())
-}
-
-//Handle our shell builtins
+/// Handles built-in commands within the Rshell.
+///
+/// This function takes a mutable slice of `String` arguments and checks the first
+/// element to determine the requested built-in command. It then performs the
+/// corresponding action using appropriate methods from the standard library.
+///
+/// Supported built-in commands are:
+///
+/// - `help`: Provides help information for Rshell commands.
+/// - `exit`: Terminates the shell.
+/// - `cd`: Changes or shows the current working directory.
+/// - `mkdir`: Creates a new directory or a series of directories.
+/// - `deldir`: Deletes a directory and its contents.
+/// - `del`: Deletes a file.
+/// - `create`: Creates a file.
+/// - `dir`: Lists the contents of a directory.
+///
+/// Returns `Ok(())` on success, or an `Err(io::Error)` if an error occurs.
 fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
 
     match args[0].as_str() {
 
         "help" =>{
-            // If argument doesn't exit
             if !args.get_mut(1).is_some() {
                 println!("HELP            provide more information");
                 println!("EXIT            exit shell");
@@ -223,7 +235,6 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
         "dir" => {
             let dir : PathBuf;
 
-            // Get current dir or the one at path
             if !args.get_mut(1).is_some(){
                 dir = PathBuf::from(".");
             }else{
@@ -232,7 +243,6 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
 
             let mut entries = read_dir(dir)?;
 
-            // Loop and print
             println!("TYPE                NAME");
             for entry in entries {
                 let entry = entry?;
@@ -253,14 +263,27 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
     }
 }
 
+/// Handles the command as a Built-in or an external one.
+///
+/// This function takes a vector of `String` arguments representing the command
+/// and its arguments. It performs the following steps:
+///
+/// 1. Checks for empty commands and returns `Ok(())` if no command is provided.
+/// 2. Iterates through the `BUILTIN_COMMANDS` list to check if the first argument
+///    matches a built-in command.
+/// 3. If a match is found, calls `rshell_builtin` to execute the built-in command
+///    and returns its result.
+/// 4. If the command is not a built-in, calls `rshell_launch` to execute it as
+///    an external program and returns its result.
+///
+/// Returns `Ok(())` on successful execution, or an `Err(io::Error)` if an error
+/// occurs during command execution.
 fn rshell_execute(mut args : Vec<String>) ->Result<(), io::Error>{
 
-    // Empty command
     if !args.get_mut(0).is_some() {
         return Ok(());
     }
 
-    // Look for builtins and execute them
     for command in BUILTIN_COMMANDS.iter(){
         if args[0] == *command{
             return rshell_builtin(&mut args[0..]);
@@ -268,5 +291,41 @@ fn rshell_execute(mut args : Vec<String>) ->Result<(), io::Error>{
     }
 
     rshell_launch(args)
+}
+
+/// Executes a command using the provided arguments and handles potential errors.
+///
+/// This function takes a vector of strings (`args`) representing the command and
+/// its arguments. It then attempts to execute it.
+///
+/// It performs the following steps:
+///
+/// 1. Creates a new `Command` instance with the first element of `args` as
+///    the program name.
+/// 2. Adds the remaining elements of `args` as arguments to the `Command`.
+/// 3. Executes the command and captures the output using `command.output()`.
+/// 4. If the command succeeds:
+///    - Prints the standard output to the console (if any).
+/// 5. If the command fails:
+///    - Prints the standard error message to the console.
+///
+/// Returns `Ok(())` if the command executes successfully, or an `Err(io::Error)`
+/// containing the error details if an error occurs during execution.
+fn rshell_launch(args : Vec<String>) ->Result<(), io::Error>{
+    let mut command = Command::new(&args[0]);
+    command.args(&args[1..]);
+
+    let output = command.output()?;
+
+    if !output.stdout.is_empty() {
+        print!("{}", String::from_utf8_lossy(&output.stdout)); // Use print! for raw output
+    }
+
+    if !output.status.success() {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+        println!("{}", error_message);
+    }
+
+    Ok(())
 }
 
