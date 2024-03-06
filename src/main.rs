@@ -241,7 +241,7 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
                 dir = PathBuf::from(&args[1]);
             }
 
-            let mut entries = read_dir(dir)?;
+            let entries = read_dir(dir)?;
 
             println!("TYPE                NAME");
             for entry in entries {
