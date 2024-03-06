@@ -1,9 +1,10 @@
+use fs::read_dir;
 use std::process::{Command, exit};
 use std::{env, fs, io};
-use std::fs::File;
-use std::path::Path;
+use std::fs::{File, ReadDir};
+use std::path::{Path, PathBuf};
 
-const BUILTIN_COMMANDS: &[&str] = &["help", "exit", "cd", "mkdir", "deldir", "del", "create"];
+const BUILTIN_COMMANDS: &[&str] = &["help", "exit", "cd", "mkdir", "deldir", "del", "create", "dir"];
 
 
 fn main(){
@@ -210,6 +211,46 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
             Ok(())
         }
 
+        "dir" => {
+
+            // Print current dir items
+            if !args.get_mut(1).is_some(){
+
+                let current_dir = PathBuf::from(".");
+                let mut entries = fs::read_dir(current_dir)?;
+
+                // Loop through each entry
+                println!("TYPE                NAME");
+                for entry in entries {
+                    let entry = entry?;
+                    let file_type = entry.file_type()?;
+
+                    // Process the entry (file or directory) based on file_type
+                    if file_type.is_dir() {
+                        println!("dir                {}", entry.path().display());
+                    } else if file_type.is_file() {
+                        println!("file               {}", entry.path().display());
+                    } else {
+                        // Handle other file types (symlinks, etc.) if needed
+                    }
+                }
+            }else{
+                let root = Path::new(&args[1]);
+
+                if root.exists(){
+                  let  path = args[1..].join(" ");
+                    let entries = read_dir(path)?
+                        .map(|res| res.map(|e| e.path()))
+                        .collect::<Result<Vec<_>, io::Error>>()?;
+                    println!("{:?}",entries);
+                }else{
+                    eprintln!("Error: cannot find specified path");
+                }
+            }
+
+            Ok(())
+        }
+
         // Ugly
         _ => Err(io::Error::new(io::ErrorKind::NotFound, "command not found")),
     }
@@ -218,7 +259,7 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
 fn rshell_execute(mut args : Vec<String>) ->Result<(), io::Error>{
 
     // Empty command
-    if args[0].is_empty(){
+    if !args.get_mut(0).is_some() {
         return Ok(());
     }
 
