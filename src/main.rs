@@ -1,7 +1,7 @@
 use fs::read_dir;
 use std::process::{Command, exit};
 use std::{env, fs, io};
-use std::fs::{File, ReadDir};
+use std::fs::{File};
 use std::path::{Path, PathBuf};
 
 const BUILTIN_COMMANDS: &[&str] = &["help", "exit", "cd", "mkdir", "deldir", "del", "create", "dir"];
@@ -94,13 +94,14 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
         "help" =>{
             // If argument doesn't exit
             if !args.get_mut(1).is_some() {
-                println!("HELP:         provide more information");
-                println!("EXIT:         exit shell");
-                println!("CD:           change  or visualize current working directory");
-                println!("MKDIR:        create new directories");
-                println!("DELDIR:       delete a directory and all its contents");
-                println!("DEL:          delete a file");
-                println!("CREATE:          create a file");
+                println!("HELP            provide more information");
+                println!("EXIT            exit shell");
+                println!("CD              change or show current working directory");
+                println!("MKDIR           create new directories");
+                println!("DELDIR          delete a directory and all its contents");
+                println!("DEL             delete a file");
+                println!("CREATE          create a file");
+                println!("DIR             visualize directory");
                 return Ok(());
             }else{
                 match args[1].as_str(){
@@ -117,7 +118,7 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
                     }
 
                     "cd" => {
-                        println!("allows you to change or visualize the current working directory");
+                        println!("allows you to change or show the current working directory");
                         println!("cd [PATH] -> move to specified directory path");
                         println!("cd .. -> move to parent directory");
                         return Ok(());
@@ -140,6 +141,14 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
                         println!("create [PATH]");
                         return Ok(());
                     }
+
+                    "dir" => {
+                        println!("allows you to visualize a directory");
+                        println!("dir [PATH] -> visualize directory given path");
+                        println!("dir -> visualize current directory");
+                        return Ok(());
+                    }
+
                     _ => Err(io::Error::new(io::ErrorKind::NotFound, "unexpected argument for help")),
                 }?;
             }
@@ -212,39 +221,27 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
         }
 
         "dir" => {
+            let dir : PathBuf;
 
-            // Print current dir items
+            // Get current dir or the one at path
             if !args.get_mut(1).is_some(){
-
-                let current_dir = PathBuf::from(".");
-                let mut entries = fs::read_dir(current_dir)?;
-
-                // Loop through each entry
-                println!("TYPE                NAME");
-                for entry in entries {
-                    let entry = entry?;
-                    let file_type = entry.file_type()?;
-
-                    // Process the entry (file or directory) based on file_type
-                    if file_type.is_dir() {
-                        println!("dir                {}", entry.path().display());
-                    } else if file_type.is_file() {
-                        println!("file               {}", entry.path().display());
-                    } else {
-                        // Handle other file types (symlinks, etc.) if needed
-                    }
-                }
+                dir = PathBuf::from(".");
             }else{
-                let root = Path::new(&args[1]);
+                dir = PathBuf::from(&args[1]);
+            }
 
-                if root.exists(){
-                  let  path = args[1..].join(" ");
-                    let entries = read_dir(path)?
-                        .map(|res| res.map(|e| e.path()))
-                        .collect::<Result<Vec<_>, io::Error>>()?;
-                    println!("{:?}",entries);
-                }else{
-                    eprintln!("Error: cannot find specified path");
+            let mut entries = read_dir(dir)?;
+
+            // Loop and print
+            println!("TYPE                NAME");
+            for entry in entries {
+                let entry = entry?;
+                let file_type = entry.file_type()?;
+
+                if file_type.is_dir() {
+                    println!("directory               {}", entry.path().display());
+                } else if file_type.is_file() {
+                    println!("file                    {}", entry.path().display());
                 }
             }
 
