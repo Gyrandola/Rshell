@@ -62,7 +62,7 @@ fn rshell_tokenize(line: String) -> Vec<String> {
     return tokens;
 }
 
-fn rshell_launch(args : Vec<String>) ->Result<(), std::io::Error>{
+fn rshell_launch(args : Vec<String>) ->Result<(), io::Error>{
     // Add arguments
     let mut command = Command::new(&args[0]);
     command.args(&args[1..]);
@@ -86,13 +86,13 @@ fn rshell_launch(args : Vec<String>) ->Result<(), std::io::Error>{
 }
 
 //Handle our shell builtins
-fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
+fn rshell_builtin(args: &mut [String]) -> Result<(), io::Error> {
 
     match args[0].as_str() {
 
         "help" =>{
             // If argument doesn't exit
-            if !(args.get_mut(1)).is_some() {
+            if !args.get_mut(1).is_some() {
                 println!("HELP:         provide more information");
                 println!("EXIT:         exit shell");
                 println!("CD:           change  or visualize current working directory");
@@ -139,18 +139,18 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
                         println!("create [PATH]");
                         return Ok(());
                     }
-                    _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "unexpected argument for help")),
+                    _ => Err(io::Error::new(io::ErrorKind::NotFound, "unexpected argument for help")),
                 }?;
             }
             Ok(())
         }
 
         "exit" =>{
-            std::process::exit(0);
+            exit(0);
         }
 
         "cd" => {
-            if !(args.get_mut(1)).is_some(){
+            if !args.get_mut(1).is_some(){
                 eprint!("{}\n",env::current_dir().unwrap().display());
             }else{
                 let root = Path::new(&args[1]);
@@ -166,7 +166,7 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
         }
 
         "mkdir" => {
-            if !(args.get_mut(1)).is_some() {
+            if !args.get_mut(1).is_some() {
                 eprintln!("Error: expected argument to mkdir");
             }else{
                 let path = args[1..].join(" ");
@@ -178,7 +178,7 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
 
 
         "deldir" => {
-            if !(args.get_mut(1)).is_some() {
+            if !args.get_mut(1).is_some() {
                 eprintln!("Error: expected argument to deldir");
             }else{
                 let path = args[1..].join(" ");
@@ -189,7 +189,7 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
         }
 
         "del" => {
-            if !(args.get_mut(1)).is_some() {
+            if !args.get_mut(1).is_some() {
                 eprintln!("Error: expected argument to del");
             }else{
                 let path = args[1..].join(" ");
@@ -200,7 +200,7 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
         }
 
         "create" => {
-            if !(args.get_mut(1)).is_some() {
+            if !args.get_mut(1).is_some() {
                 eprintln!("Error: expected argument to create");
             }else{
                 let path = args[1..].join(" ");
@@ -211,11 +211,11 @@ fn rshell_builtin(args: &mut [String]) -> Result<(), std::io::Error> {
         }
 
         // Ugly
-        _ => Err(std::io::Error::new(std::io::ErrorKind::NotFound, "command not found")),
+        _ => Err(io::Error::new(io::ErrorKind::NotFound, "command not found")),
     }
 }
 
-fn rshell_execute(mut args : Vec<String>) ->Result<(), std::io::Error>{
+fn rshell_execute(mut args : Vec<String>) ->Result<(), io::Error>{
 
     // Empty command
     if args[0].is_empty(){
