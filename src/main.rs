@@ -318,7 +318,7 @@ fn rshell_launch(args : Vec<String>) ->Result<(), io::Error>{
     let output = command.output()?;
 
     if !output.stdout.is_empty() {
-        print!("{}", String::from_utf8_lossy(&output.stdout)); // Use print! for raw output
+        print!("{}", String::from_utf8_lossy(&output.stdout));
     }
 
     if !output.status.success() {
