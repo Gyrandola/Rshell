@@ -2,7 +2,6 @@
 ## Rshell
 <b>Basic & lightweight shell written in Rust</b>.<br>
 
-This shell is part of my journey into learning Rust.<br>
 It currently lacks scripting, autocompletion, and a standalone GUI which I might implement in the future. <br>
 Overall a solid start for anyone wishing to make a more useful product.
 
